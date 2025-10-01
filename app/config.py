@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     interview_location: str = 'Video Call'
     interview_reminder_email_minutes: int = 24 * 60  # 24 hours
     interview_reminder_popup_minutes: int = 10
-    calendar_search_days: int = 7
+    calendar_search_days: int = 7 * 4
 
     class Config:
         env_file = ".env"
