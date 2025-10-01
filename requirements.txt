@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+openai
+python-dotenv
+aiofiles
+gunicorn
+google-api-python-client
+google-auth-oauthlib
+pydantic-settings
+babel

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume Q&A and Scheduler</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>Resume Q&A and Interview Scheduler</header>
+  <div id="chat-container"></div>
+  <div id="input-area" style="display: none;">
+    <input type="text" id="question" placeholder="Type your message...">
+    <button id="action-btn">Send</button>
+  </div>
+
+
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const inputArea = document.getElementById('input-area');
+  const input = document.getElementById('question');
+  const actionBtn = document.getElementById('action-btn');
+
+  let mode = ''; // 'qa' or 'schedule'
+  let scheduleState = ''; // 'prompt_name', 'prompt_email', 'prompt_duration', 'prompt_time'
+  let scheduleData = {};
+  let currentSessionId = null; // Session ID for conversation context
+  let awaitingClarification = false; // Track if we're waiting for clarification response
+
+  // Email validation function (matches server-side validation in app/security.py)
+  function validateEmail(email) {
+    if (!email || email.length > 254) {
+      return false;
+    }
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailPattern.test(email);
+  }
+
+  // Duration validation function (matches server-side validation in app/security.py)
+  function validateDuration(durationStr) {
+    if (!durationStr || !durationStr.trim()) {
+      return { valid: false, value: 0 };
+    }
+    
+    // Replace comma with dot for decimal parsing
+    const normalized = durationStr.trim().replace(',', '.');
+    const duration = parseFloat(normalized);
+    
+    if (isNaN(duration) || duration < 0.25 || duration > 8) {
+      return { valid: false, value: 0 };
+    }
+    
+    return { valid: true, value: duration };
+  }
+
+  // Initialize the chat with welcome messages
+  function initializeChat() {
+    addMessage('Hello! I can help you with questions about the resume or schedule an interview. What would you like to do?', 'bot');
+    
+    // Add clickable options as bot messages
+    const askQuestionMsg = addMessage('📝 Ask a question about the resume', 'bot', true, async () => {
+      mode = 'qa';
+      inputArea.style.display = 'flex';
+      addMessage('You can now ask me anything about the resume. E.g., you could ask <How long did you work for MunichRe?>', 'bot');
+      
+      // Create a new session for the conversation
+      try {
+        const response = await fetch('/qa/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        currentSessionId = data.session_id;
+        console.log('Created session:', currentSessionId);
+      } catch (error) {
+        console.error('Error creating session:', error);
+      }
+    });
+    
+    const scheduleMsg = addMessage('📅 Schedule an interview', 'bot', true, () => {
+      mode = 'schedule';
+      inputArea.style.display = 'flex';
+      startScheduling();
+    });
+  }
+
+  // Initialize chat when page loads
+  window.onload = initializeChat;
+
+  actionBtn.onclick = () => {
+    if (mode === 'qa') {
+      handleQASession();
+    } else if (mode === 'schedule') {
+      handleSchedulingSession();
+    }
+  };
+
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      actionBtn.click();
+    }
+  };
+
+  function addMessage(text, sender, isClickable = false, clickHandler = null) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender);
+    
+    if (sender === 'bot') {
+      // Add robot icon for bot messages
+      const robotIcon = document.createElement('img');
+      robotIcon.src = '/static/robot-icon.svg';
+      robotIcon.alt = 'Robot';
+      robotIcon.classList.add('robot-icon');
+      
+      const textSpan = document.createElement('span');
+      textSpan.textContent = text;
+      
+      messageDiv.appendChild(robotIcon);
+      messageDiv.appendChild(textSpan);
+      
+      if (isClickable && clickHandler) {
+        messageDiv.classList.add('clickable');
+        messageDiv.style.cursor = 'pointer';
+        messageDiv.onclick = clickHandler;
+      }
+    } else {
+      messageDiv.textContent = text;
+    }
+    
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return messageDiv;
+  }
+
+  async function handleQASession() {
+    const question = input.value.trim();
+    if (!question) return;
+    addMessage(question, 'user');
+    input.value = '';
+    const botMessage = addMessage('', 'bot');
+    
+    // Get the text span for streaming content
+    const textSpan = botMessage.querySelector('span');
+
+    try {
+      const requestBody = { question };
+      if (currentSessionId) {
+        requestBody.session_id = currentSessionId;
+      }
+      
+      const response = await fetch('/qa/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.status === 400) {
+        // Handle error response
+        const errorData = await response.json();
+        // Remove the bot message and add an error message instead
+        botMessage.remove();
+        addMessage(errorData.detail, 'error');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Get session ID from response headers if available
+      const sessionId = response.headers.get('X-Session-ID');
+      if (sessionId && !currentSessionId) {
+        currentSessionId = sessionId;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const decodedChunk = decoder.decode(value, { stream: true });
+        fullResponse += decodedChunk;
+        if (textSpan) {
+            textSpan.textContent += decodedChunk;
+        } else {
+            botMessage.textContent += decodedChunk;
+        }
+      }
+      
+      // Check if the response indicates a clarification request
+      if (fullResponse.includes('I need some clarification:')) {
+        awaitingClarification = true;
+        // Add a subtle visual indicator that we're waiting for clarification
+        if (textSpan) {
+          textSpan.parentElement.style.borderLeft = '3px solid #f59e0b';
+        }
+        input.placeholder = 'Please provide clarification...';
+      } else {
+        awaitingClarification = false;
+        input.placeholder = 'Type your message...';
+        // Remove clarification indicator if it was there
+        if (textSpan) {
+          textSpan.parentElement.style.borderLeft = '';
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error:', error);
+      botMessage.remove();
+      addMessage('Sorry, there was an error processing your request. Please try again.', 'error');
+    }
+  }
+
+  function startScheduling() {
+    scheduleState = 'prompt_name';
+    addMessage('Great! Let\'s schedule an interview. What is your full name?', 'bot');
+  }
+
+  async function handleSchedulingSession() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    input.value = '';
+
+    if (scheduleState === 'prompt_name') {
+      scheduleData.name = text;
+      scheduleState = 'prompt_email';
+      addMessage(`Thanks, ${text}. What is your email address?`, 'bot');
+    } else if (scheduleState === 'prompt_email') {
+      // Validate email format instantly
+      if (!validateEmail(text)) {
+        addMessage('Please enter a valid email address. The email format should be like: example@domain.com', 'bot');
+        return; // Stay in the same state and re-prompt
+      }
+      
+      scheduleData.email = text;
+      scheduleState = 'prompt_duration';
+      addMessage('Great! How long would you like the interview to be? Please enter the duration in hours (e.g., 1 for 1 hour, 1.5 or 1,5 for 1.5 hours):', 'bot');
+    } else if (scheduleState === 'prompt_duration') {
+      // Validate duration format
+      const durationValidation = validateDuration(text);
+      if (!durationValidation.valid) {
+        addMessage('Please enter a valid duration between 0.25 and 8 hours. You can use either "." or "," as decimal separator (e.g., 1.5 or 1,5).', 'bot');
+        return; // Stay in the same state and re-prompt
+      }
+      
+      scheduleData.duration = durationValidation.value;
+      scheduleState = 'prompt_time';
+      addMessage(`Thank you. The interview duration is set to ${durationValidation.value} hour${durationValidation.value !== 1 ? 's' : ''}. I am now fetching available time slots...`, 'bot');
+      const response = await fetch('/scheduling/get-availability');
+      const data = await response.json();
+      if (data.slots && data.slots.length > 0) {
+        let slotsText = 'Please choose one of the following available slots:\n';
+        data.slots.forEach((slot, index) => {
+          slotsText += `${index + 1}. ${new Date(slot).toLocaleString()}\n`;
+        });
+        addMessage(slotsText, 'bot');
+        addMessage('Please reply with the number of your chosen slot.', 'bot');
+        scheduleData.slots = data.slots;
+      } else {
+        addMessage('Sorry, there are no available slots in the next 7 days.', 'bot');
+        // Optionally, send an email to the owner
+      }
+    } else if (scheduleState === 'prompt_time') {
+      const choice = parseInt(text, 10);
+      if (scheduleData.slots && choice > 0 && choice <= scheduleData.slots.length) {
+        scheduleData.time = scheduleData.slots[choice - 1];
+        addMessage(`You have selected: ${new Date(scheduleData.time).toLocaleString()}. Booking...`, 'bot');
+        
+        const bookingResponse = await fetch('/scheduling/book-interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: scheduleData.name,
+              email: scheduleData.email,
+              time: scheduleData.time,
+              duration_hours: scheduleData.duration
+            })
+        });
+        const result = await bookingResponse.json();
+        if (result.status === 'success') {
+            addMessage('Your interview has been booked successfully! You will receive a calendar invitation shortly.', 'bot');
+        } else {
+            addMessage('There was an error booking your interview. Please try again later.', 'bot');
+        }
+        scheduleState = '';
+      } else {
+        addMessage('Invalid selection. Please choose a valid number from the list.', 'bot');
+      }
+    }
+  }
+</script>
+</body>
+</html>

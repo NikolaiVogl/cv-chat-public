@@ -1,0 +1,92 @@
+Curriculum Vitae – Dr. Nikolai Vogl
+
+============================================================
+Profile
+PhD researcher with over 10 years of experience in:
+- Mathematical optimization
+- Stochastic modeling
+- Statistics
+- Applied machine learning
+
+Strong background in project-based work, including software development in the insurance industry.
+- Published 3 peer-reviewed papers in high-quality journals.
+- Presented research at more than 10 international conferences.
+- Skilled at deriving data-driven insights and communicating results to diverse audiences, including senior leadership.
+
+Currently seeking to transition into a more technical career path outside of reinsurance.
+
+============================================================
+Personal Details
+- Name: Dr. Nikolai Vogl
+- Address: Bahnhofstr. 33, 82340 Feldafing, Germany
+- E-mail: nikolai.vogl@gmail.com
+- Date of Birth: 1988-06-22
+- Nationality: German
+- Languages:
+  - German (mother tongue)
+  - English (fluent)
+
+============================================================
+Key Skills
+- Actuarial science, probability theory, stochastic modelling, mathematical optimization
+- Data science, stochastic analysis, forecasting (including machine learning)
+- (Re)insurance pricing and technical underwriting
+- Application of mathematical and statistical methods to real-world problems
+- Software development:
+  - gnu R
+  - Databricks
+  - Linux
+  - Python
+  - Git
+  - Azure DevOps
+  - CI/CD
+	
+
+============================================================
+Employment History
+
+Cyber Actuary and Underwriter, Munich Re
+- Start: 2021-07
+- End: ongoing
+- Responsibilities:
+  - Developed Monte Carlo simulation-based tools for pricing direct and facultative cyber insurance.
+  - Refined accumulation modelling for cyber risk and developed associated tools.
+  - Collaborated with external parties (model vendors, brokers).
+  - Designed best practices for treaty pricing and trained underwriters.
+  - Developed software solutions in gnu R and python.
+  - Active member of the cyber working group of the German Actuarial Association (DAV).
+
+Pricing Actuary, Hannover Re
+- Start: 2017-05
+- End: 2021-06
+- Responsibilities:
+  - Priced reinsurance treaties (focus on Cyber, but also other lines and treaty types).
+  - Developed pricing tools for reinsurance treaties in an agile setting (gnu R and python on Databricks).
+  - Implemented a database for cyber risks.
+  - Modelled cyber insurance premiums for treaty and facultative business using statistical and machine learning techniques.
+
+Research Assistant, Friedrich-Alexander-University Erlangen-Nürnberg, Department of Insurance Economics and Risk Management
+- Start: 2012-10
+- End: 2016-08
+- Responsibilities:
+  - Conducted research in financial and insurance mathematics.
+  - Performed data analysis, statistical modelling, and Monte Carlo simulations.
+  - Used statistical software tools (mainly gnu R, Python).
+  - Presented results at several international conferences.
+
+============================================================
+Educational History
+- 2023-12: Certified Actuarial Data Scientist (CADS), DAV
+- 2021-08: Actuary (DAV)
+- 2017-07: PhD in Applied Mathematics and Risk Management, Friedrich-Alexander-University Erlangen-Nürnberg (summa cum laude)
+- 2012-12: Master of Science in Mathematics, Friedrich-Alexander-University Erlangen-Nürnberg
+- 2010-09: Bachelor of Science in Business Mathematics, Friedrich-Alexander-University Erlangen-Nürnberg
+
+============================================================
+Publications and Achievements
+- 2021-04: Publication: "Portfolio Optimization with Irreversible Long-Term Investments in Renewable Energy under Policy Risk: A Mixed-Integer Multistage Stochastic Model and a Moving-Horizon Approach", European Journal of Operational Research
+- 2019-03: Publication: "Convergence of Capital and Insurance Markets: Consistent Pricing of Index-Linked Catastrophe Loss Instruments", Journal of Risk and Insurance
+- 2017-12: PhD prize awarded by Hermann Gutmann-Stiftung
+- 2016-08: Publication: "Evaluating Investments in Renewable Energy Projects under Policy Risks", Energy Policy
+- 2014-09: SCOR/EGRIE Young Economist Best Paper Award 2014 at the 41st Annual Seminar of the European Group of Risk and Insurance Economists (EGRIE), St. Gallen
+- 2010-11 to 2012-08: Scholarship by Leonardo Kolleg (awarded to top 5% of students at Friedrich-Alexander-University Erlangen-Nürnberg)
